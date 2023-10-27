@@ -1,0 +1,98 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_FUNCTION_NAME_LENGTH 100
+
+// Структура для представления узла дерева вызовов функций
+typedef struct CallTreeNode {
+    char function_name[MAX_FUNCTION_NAME_LENGTH];
+    struct CallTreeNode* parent;
+    struct CallTreeNode** children;
+    int children_count;
+} CallTreeNode;
+
+// Функция для создания нового узла дерева вызовов функций
+CallTreeNode* create_call_tree_node(const char* function_name, CallTreeNode* parent) {
+    CallTreeNode* node = (CallTreeNode*)malloc(sizeof(CallTreeNode));
+    strcpy(node->function_name, function_name);
+    node->parent = parent;
+    node->children_count = 0;
+    node->children = NULL;
+    return node;
+}
+
+// Функция для добавления ребенка к узлу дерева вызовов функций
+void add_child_call_tree_node(CallTreeNode* parent, CallTreeNode* child) {
+    parent->children_count++;
+    parent->children = (CallTreeNode**)realloc(parent->children, parent->children_count * sizeof(CallTreeNode*));
+    parent->children[parent->children_count - 1] = child;
+}
+
+// Функция для печати дерева вызовов функций
+void print_call_tree(CallTreeNode* node, int level) {
+    if (node == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < level; i++) {
+        printf("  ");
+    }
+
+    printf("-> %s\n", node->function_name);
+
+    for (int i = 0; i < node->children_count; i++) {
+        print_call_tree(node->children[i], level + 1);
+    }
+}
+
+int main() {
+    FILE* file = fopen("test.txt", "r");
+    if (file == NULL) {
+        printf("Не удалось открыть файл.\n");
+        return 1;
+    }
+
+    char line[100];
+    CallTreeNode* root = create_call_tree_node("main", NULL);
+    CallTreeNode* current_node = root;
+
+    while (fgets(line, sizeof(line), file)) {
+        char* function_start = strstr(line, "void "); // Проверка на определение функции
+
+        if (function_start != NULL) {
+            char* function_name_start = function_start + 5; // Пропустить "void "
+            char* function_name_end = strchr(function_name_start, '('); // Найти конец имени функции
+
+            if (function_name_end != NULL) {
+                int function_name_length = function_name_end - function_name_start;
+                char function_name[MAX_FUNCTION_NAME_LENGTH];
+                strncpy(function_name, function_name_start, function_name_length);
+                function_name[function_name_length] = '\0';
+
+                CallTreeNode* new_node = create_call_tree_node(function_name, current_node);
+                add_child_call_tree_node(current_node, new_node);
+                current_node = new_node;
+            }
+        } else if (strstr(line, "{") != NULL) {
+            // Открывающая скобка - перейти на следующий уровень дерева
+            if (current_node != NULL) {
+                current_node = current_node->children[current_node->children_count - 1];
+            }
+        } else if (strstr(line, "}") != NULL) {
+            // Закрывающая скобка - вернуться на уровень выше в дереве
+            if (current_node != NULL && current_node->parent != NULL) {
+                current_node = current_node->parent;
+            }
+        }
+    }
+
+    fclose(file);
+
+    printf("Function Call Tree:\n");
+    print_call_tree(root, 0);
+
+    free(root); // Освобождение памяти, занимаемой деревом вызовов функций
+
+    return 0;
+}
