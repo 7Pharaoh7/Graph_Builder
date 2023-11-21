@@ -1,0 +1,57 @@
+#include <stdio.h>
+#include <stdarg.h>
+#include <limits.h>
+
+void obnulit_samyy_korotkiy_diapazon(int num_arrays, ...) {
+    va_list args;
+    va_start(args, num_arrays); 
+
+    int min_length = INT_MAX;
+    int *min_length_array = NULL;
+
+    for (int i = 0; i < num_arrays; i++) {
+        int *arr = va_arg(args, int*);
+        int length = va_arg(args, int);
+
+        if (length < min_length) {
+            min_length = length;
+            min_length_array = arr;
+        }
+    }
+
+    va_end(args);
+
+    if (min_length_array != NULL) {
+        for (int i = 0; i < min_length; i++) {
+            min_length_array[i] = 0;
+        }
+    }
+}
+
+int main() {
+    int array1[] = {1, 2, 3, 4};
+    int array2[] = {1, 20, 30, 40};
+    int array3[] = {5, 15, 25, 35};
+
+    obnulit_samyy_korotkiy_diapazon(3, array1, sizeof(array1) / sizeof(array1[0]), array2, sizeof(array2) / sizeof(array2[0]), array3, sizeof(array3) / sizeof(array3[0]));
+
+    printf("Mas 1: ");
+    for (int i = 0; i < sizeof(array1) / sizeof(array1[0]); i++) {
+        printf("%d ", array1[i]);
+    }
+    printf("\n");
+
+    printf("Mas 2: ");
+    for (int i = 0; i < sizeof(array2) / sizeof(array2[0]); i++) {
+        printf("%d ", array2[i]);
+    }
+    printf("\n");
+
+    printf("Mas 3: ");
+    for (int i = 0; i < sizeof(array3) / sizeof(array3[0]); i++) {
+        printf("%d ", array3[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
